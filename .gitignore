@@ -1,6 +1,7 @@
 node_modules/
 data/
 ptn/
-auth.json
+.idea/
+config.json
 results.db
 .DS_Store

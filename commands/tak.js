@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { parseTPS, parseTheme } = require("../TPS-Ninja/src");
+const config = require("../config.json");
 const {
   clearDeleteTimer,
   createPtnFile,
@@ -12,7 +13,7 @@ const {
   sendMessage,
   sendPngToDiscord,
   setInactiveTimer,
-  setTheme,
+  setTheme
 } = require("../util");
 
 module.exports = {
@@ -25,43 +26,28 @@ module.exports = {
         .setDescription("Your opponent")
         .setRequired(true)
     )
-    .addIntegerOption((option) =>
-      option
-        .setName("size")
-        .setDescription("Board size")
-        .addChoices(
-          { name: "3x3", value: 3 },
-          { name: "4x4", value: 4 },
-          { name: "5x5", value: 5 },
-          { name: "6x6 (default)", value: 6 },
-          { name: "7x7", value: 7 },
-          { name: "8x8", value: 8 }
-        )
+    .addIntegerOption((option) => {
+        return option
+          .setName("size")
+          .setDescription("Board size")
+          .addChoices(
+            [3, 4, 5, 6, 7, 8].map(size => ({
+              name: `${size}x${size}${config.defaults.size === size ? " (default)" : ""}`,
+              value: size
+            }))
+          );
+      }
     )
     .addNumberOption((option) =>
       option
         .setName("komi")
         .setDescription("Komi")
         .addChoices(
-          { name: "4.5", value: 4.5 },
-          { name: "4", value: 4 },
-          { name: "3.5", value: 3.5 },
-          { name: "3", value: 3 },
-          { name: "2.5", value: 2.5 },
-          { name: "2", value: 2 },
-          { name: "1.5", value: 1.5 },
-          { name: "1", value: 1 },
-          { name: "0.5", value: 0.5 },
-          { name: "0 (default)", value: 0 },
-          { name: "-0.5", value: -0.5 },
-          { name: "-1", value: -1 },
-          { name: "-1.5", value: -1.5 },
-          { name: "-2", value: -2 },
-          { name: "-2.5", value: -2.5 },
-          { name: "-3", value: -3 },
-          { name: "-3.5", value: -3.5 },
-          { name: "-4", value: -4 },
-          { name: "-4.5", value: -4.5 }
+          Array.from({ length: 18 },
+            (_, i) => (i - 9) / 2).map(komi => ({
+            name: `${komi}${config.defaults.komi === komi ? " (default)" : ""}`,
+            value: komi
+          }))
         )
     )
     .addIntegerOption((option) =>
@@ -163,170 +149,170 @@ module.exports = {
     const opponent = options.getUser("opponent");
     if (!opponent) {
       return sendMessage(interaction, "Invalid opponent", true);
-    } else if (isGameOngoing(interaction)) {
+    }
+    if (isGameOngoing(interaction)) {
       return sendMessage(interaction, "There's a game in progress!", true);
-    } else if (client.user.id === opponent.id) {
+    }
+    if (client.user.id === opponent.id) {
       return sendMessage(
         interaction,
         "Sorry, I don't know how to play yet. I just facilitate games. Challenge someone else!",
         true
       );
+    }
+    let player1;
+    let displayName1;
+    let player2;
+    let displayName2;
+    let thisPlayer =
+      options.getInteger("color") || 1 + Math.round(Math.random());
+    if (thisPlayer === 1) {
+      player1 = interaction.member;
+      displayName1 = interaction.member.displayName;
+      player2 = opponent;
+      displayName2 = opponent.displayName;
     } else {
-      let player1;
-      let displayName1;
-      let player2;
-      let displayName2;
-      let thisPlayer =
-        options.getInteger("color") || 1 + Math.round(Math.random());
-      if (thisPlayer == 1) {
-        player1 = interaction.member;
-        displayName1 = interaction.member.displayName;
-        player2 = opponent;
-        displayName2 = opponent.displayName;
-      } else {
-        player1 = opponent;
-        displayName1 = opponent.displayName;
-        player2 = interaction.member;
-        displayName2 = interaction.member.displayName;
+      player1 = opponent;
+      displayName1 = opponent.displayName;
+      player2 = interaction.member;
+      displayName2 = interaction.member.displayName;
+    }
+
+    let tps = options.getString("tps");
+    let tpsParsed;
+    let size;
+    if (tps) {
+      // TPS
+      tpsParsed = parseTPS(tps);
+      if (tpsParsed.error) {
+        return sendMessage(interaction, tpsParsed.error, true);
       }
-
-      let tps = options.getString("tps");
-      let tpsParsed;
-      let size;
-      if (tps) {
-        // TPS
-        tpsParsed = parseTPS(tps);
-        if (tpsParsed.error) {
-          return sendMessage(interaction, tpsParsed.error, true);
-        }
-        size = tpsParsed.size;
-      } else {
-        // Size
-        size = options.getInteger("size") || 6;
-        tps = size;
-        if (size < 3 || size > 8) {
-          return sendMessage(interaction, "Invalid board size.", true);
-        }
+      size = tpsParsed.size;
+    } else {
+      // Size
+      size = options.getInteger("size") || config.defaults.size;
+      tps = size;
+      if (size < 3 || size > 8) {
+        return sendMessage(interaction, "Invalid board size.", true);
       }
+    }
 
-      // Komi
-      let komi = options.getNumber("komi") || 0;
-      if (komi < -4.5 || komi > 4.5) {
-        return sendMessage(interaction, "Invalid komi.", true);
-      }
+    // Komi
+    let komi = options.getNumber("komi") || config.defaults.komi;
+    if (komi < -4.5 || komi > 4.5) {
+      return sendMessage(interaction, "Invalid komi.", true);
+    }
 
-      // Opening
-      let opening = options.getString("opening") || "swap";
-      if (opening != "swap" && opening != "no-swap") {
-        return sendMessage(interaction, "Invalid opening.", true);
-      }
+    // Opening
+    let opening = options.getString("opening") || config.defaults.opening;
+    if (opening != "swap" && opening != "no-swap") {
+      return sendMessage(interaction, "Invalid opening.", true);
+    }
 
-      // Piece counts
-      const caps = options.getInteger("caps");
-      const flats = options.getInteger("flats");
-      const caps1 = options.getInteger("caps1");
-      const flats1 = options.getInteger("flats1");
-      const caps2 = options.getInteger("caps2");
-      const flats2 = options.getInteger("flats2");
+    // Piece counts
+    const caps = options.getInteger("caps");
+    const flats = options.getInteger("flats");
+    const caps1 = options.getInteger("caps1");
+    const flats1 = options.getInteger("flats1");
+    const caps2 = options.getInteger("caps2");
+    const flats2 = options.getInteger("flats2");
 
-      // Inactivity Reminder Interval
-      const inactiveInterval = options.getInteger("inactive-interval") || 864e5;
+    // Inactivity Reminder Interval
+    const inactiveInterval = options.getInteger("inactive-interval") || 864e5;
 
-      // Theme
-      let theme = options.getString("theme");
-      if (theme) {
-        try {
-          theme = parseTheme(theme);
-        } catch (err) {
-          return sendMessage(interaction, "Invalid theme", true);
-        }
-      } else {
-        theme = getTheme(interaction);
-      }
-
-      // Toggles
-      const flatCounts = options.getBoolean("flat-counts");
-      const stackCounts = options.getBoolean("stack-counts");
-      const showRoads = options.getBoolean("road-connections");
-      const allowLinks = options.getBoolean("allow-links");
-      const blind = options.getBoolean("blind");
-
-      // Create game data
-      const gameData = {
-        player1Id: player1.id,
-        player2Id: player2.id,
-        player1: displayName1,
-        player2: displayName2,
-        size,
-        komi,
-        opening,
-        inactiveInterval,
-      };
-      if (tpsParsed) {
-        gameData.initialTPS = tps;
-        gameData.moveNumber = Number(tpsParsed.linenum);
-      }
-      const gameId = createPtnFile(gameData);
-      gameData.gameId = gameId;
-
-      if (caps !== null) gameData.caps = caps;
-      if (flats !== null) gameData.flats = flats;
-      if (caps1 !== null) gameData.caps1 = caps1;
-      if (flats1 !== null) gameData.flats1 = flats1;
-      if (caps2 !== null) gameData.caps2 = caps2;
-      if (flats2 !== null) gameData.flats2 = flats2;
-      if (flatCounts === false) gameData.flatCounts = false;
-      if (stackCounts === false) gameData.stackCounts = false;
-      if (showRoads === false) gameData.showRoads = false;
-      if (allowLinks === false) gameData.allowLinks = false;
-      if (blind) gameData.blind = true;
-
-      let destination = interaction;
-      let channelName = `${gameData.player1}-🆚-${gameData.player2}`;
-      if (!isGameChannel(interaction)) {
-        // Make a new thread (which is a type of channel)
-        try {
-          let channel = await interaction.channel.threads.create({
-            name: channelName,
-          });
-          destination = { channel };
-          await sendMessage(interaction, `<#${channel.id}>`);
-          await channel.members.add(player1.id);
-          await channel.members.add(player2.id);
-        } catch (err) {
-          console.error(err);
-          return sendMessage(
-            interaction,
-            "I wasn't able to create a new channel.",
-            true
-          );
-        }
-      } else {
-        // Use existing channel
-        interaction.channel.setName(channelName);
-      }
-
-      let canvas;
+    // Theme
+    let theme = options.getString("theme");
+    if (theme) {
       try {
-        canvas = drawBoard({ ...gameData, tps }, theme);
+        theme = parseTheme(theme);
+      } catch (err) {
+        return sendMessage(interaction, "Invalid theme", true);
+      }
+    } else {
+      theme = getTheme(interaction);
+    }
+
+    // Toggles
+    const flatCounts = options.getBoolean("flat-counts") || config.defaults.flatCounts;
+    const stackCounts = options.getBoolean("stack-counts") || config.defaults.stackCounts;
+    const showRoads = options.getBoolean("road-connections") || config.defaults.roadConnections;
+    const allowLinks = options.getBoolean("allow-links") || config.defaults.allowLinks;
+    const blind = options.getBoolean("blind") || config.defaults.blind;
+
+    // Create game data
+    const gameData = {
+      player1Id: player1.id,
+      player2Id: player2.id,
+      player1: displayName1,
+      player2: displayName2,
+      size,
+      komi,
+      opening,
+      inactiveInterval
+    };
+    if (tpsParsed) {
+      gameData.initialTPS = tps;
+      gameData.moveNumber = Number(tpsParsed.linenum);
+    }
+    gameData.gameId = createPtnFile(gameData);
+
+    if (caps !== null) gameData.caps = caps;
+    if (flats !== null) gameData.flats = flats;
+    if (caps1 !== null) gameData.caps1 = caps1;
+    if (flats1 !== null) gameData.flats1 = flats1;
+    if (caps2 !== null) gameData.caps2 = caps2;
+    if (flats2 !== null) gameData.flats2 = flats2;
+    if (flatCounts === false) gameData.flatCounts = false;
+    if (stackCounts === false) gameData.stackCounts = false;
+    if (showRoads === false) gameData.showRoads = false;
+    if (allowLinks === false) gameData.allowLinks = false;
+    if (blind) gameData.blind = true;
+
+    let destination = interaction;
+    let channelName = `${gameData.player1}-🆚-${gameData.player2}`;
+    if (!isGameChannel(interaction)) {
+      // Make a new thread (which is a type of channel)
+      try {
+        let channel = await interaction.channel.threads.create({
+          name: channelName
+        });
+        destination = { channel };
+        await sendMessage(interaction, `<#${channel.id}>`);
+        await channel.members.add(player1.id);
+        await channel.members.add(player2.id);
       } catch (err) {
         console.error(err);
         return sendMessage(
           interaction,
-          "Something went wrong when I tried to draw the board.",
+          "I wasn't able to create a new channel.",
           true
         );
       }
-
-      saveGameData(destination, { tps: canvas.id, gameData });
-      if (options.getString("theme")) {
-        setTheme(destination, theme);
-      }
-      const message = getTurnMessage(gameData, canvas);
-      sendPngToDiscord(destination, canvas, message);
-
-      clearDeleteTimer(interaction);
-      setInactiveTimer(destination, gameData, canvas);
+    } else {
+      // Use existing channel
+      interaction.channel.setName(channelName);
     }
-  },
+
+    let canvas;
+    try {
+      canvas = drawBoard({ ...gameData, tps }, theme);
+    } catch (err) {
+      console.error(err);
+      return sendMessage(
+        interaction,
+        "Something went wrong when I tried to draw the board.",
+        true
+      );
+    }
+
+    saveGameData(destination, { tps: canvas.id, gameData });
+    if (options.getString("theme")) {
+      setTheme(destination, theme);
+    }
+    const message = getTurnMessage(gameData, canvas);
+    sendPngToDiscord(destination, canvas, message);
+
+    clearDeleteTimer(interaction);
+    setInactiveTimer(destination, gameData, canvas);
+  }
 };

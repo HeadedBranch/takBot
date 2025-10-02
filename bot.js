@@ -1,7 +1,7 @@
 const Discord = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const auth = require("./auth.json");
+const auth = require("./config.json");
 
 const {
   cleanupFiles,

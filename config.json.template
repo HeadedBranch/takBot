@@ -1,0 +1,15 @@
+{
+  "token": "your-token-goes-here",
+  "clientId": "your-application-id-goes-here"
+  "defaults": {
+    "size": 6,
+    "komi": 0,
+    "opening": "swap",
+    "theme": "discord",
+    "flatCounts": true,
+    "stackCounts": true,
+    "roadConnections": true,
+    "allowLinks": true,
+    "blind": false
+  }
+}

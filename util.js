@@ -2,6 +2,7 @@ const Discord = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const config = require("./config.json");
 const { compressToEncodedURIComponent } = require("lz-string");
 const { TPStoCanvas, parseTPS } = require("./TPS-Ninja/src");
 const { Ply } = require("./TPS-Ninja/src/Ply");
@@ -33,7 +34,7 @@ const INACTIVE_MESSAGES = [
 // Persisting variables
 
 let client;
-const defaultTheme = "discord";
+const defaultTheme = config.defaults.theme;
 const deleteTimers = {};
 const inactiveTimers = {};
 const reminderTimers = {};
