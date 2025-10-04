@@ -28,7 +28,7 @@ const INACTIVE_MESSAGES = [
   "It's your turn, @player! What's your next move?",
   "Your turn, @player! Let's see what you've got.",
   "@player, it's your turn. Ready to make a move?",
-  "Don't forget, @player, it's your turn now!",
+  "Don't forget, @player, it's your turn now!"
 ];
 
 // Persisting variables
@@ -152,7 +152,7 @@ function seedRandom(seed) {
   return x - Math.floor(x);
 }
 
-Ply.prototype.toString = function () {
+Ply.prototype.toString = function() {
   let minDistribution, minPieceCount;
   if (this.movement) {
     this.specialPiece = "";
@@ -180,8 +180,8 @@ module.exports = {
       intents: [
         Discord.GatewayIntentBits.Guilds,
         Discord.GatewayIntentBits.GuildMessages,
-        Discord.GatewayIntentBits.MessageContent,
-      ],
+        Discord.GatewayIntentBits.MessageContent
+      ]
     });
     return client;
   },
@@ -205,8 +205,8 @@ module.exports = {
     }
 
     if (
-      (gameData.turnMarker === "1" && msg.author.id != gameData.player1Id) ||
-      (gameData.turnMarker === "2" && msg.author.id != gameData.player2Id)
+      (gameData.turnMarker === "1" && msg.author.id !== gameData.player1Id) ||
+      (gameData.turnMarker === "2" && msg.author.id !== gameData.player2Id)
     ) {
       return module.exports.sendMessage(
         msg,
@@ -217,7 +217,7 @@ module.exports = {
 
     let canvas;
     try {
-      ply = new Ply(ply.replace("’", "'").replace("”", '"')).toString();
+      ply = new Ply(ply.replace("’", "'").replace("”", "\"")).toString();
       canvas = module.exports.drawBoard(
         gameData,
         module.exports.getTheme(msg),
@@ -259,7 +259,7 @@ module.exports = {
           player2: gameData.player2,
           komi: gameData.komi,
           opening: gameData.opening,
-          result: result,
+          result: result
         });
       }
       await module.exports.sendPngToDiscord(
@@ -381,7 +381,7 @@ module.exports = {
       theme,
       bgAlpha: 0,
       padding: false,
-      font: "roboto",
+      font: "roboto"
     };
     if (ply) {
       options.ply = ply;
@@ -447,7 +447,7 @@ module.exports = {
     const nextPlayer = gameData[`player${canvas.player}Id`];
     let message = `Your turn ${canvas.linenum}, <@${nextPlayer}>.`;
     if (ply) {
-      const lastPlayer = canvas.player == 1 ? 2 : 1;
+      const lastPlayer = canvas.player === 1 ? 2 : 1;
       message = ply + " | " + message;
       if (/''|"/.test(ply)) {
         message += "\n*" + gameData[`player${lastPlayer}`];
@@ -457,6 +457,9 @@ module.exports = {
         message += " Tinuë.*";
       } else if (/'/.test(ply)) {
         message += "\n*Tak!*";
+      }
+      if (gameData.botGame) {
+        message += "||" + gameData.tps + "||";
       }
     } else {
       message +=
@@ -518,7 +521,7 @@ module.exports = {
         } else {
           return fs.rmSync(path.join(channelDir, "tps"), {
             recursive: true,
-            force: true,
+            force: true
           });
         }
       }
@@ -558,7 +561,7 @@ module.exports = {
     if (gameData.komi) {
       data += `[Komi "${gameData.komi}"]\n`;
     }
-    if (gameData.opening != "swap") {
+    if (gameData.opening !== "swap") {
       data += `[Opening "${gameData.opening}"]\n`;
     }
     if (gameData.initialTPS) {
@@ -634,7 +637,7 @@ module.exports = {
       let historyArray = history.split("\n");
       let header = historyArray[0];
       historyArray.shift();
-      while (historyArray[historyArray.length - 1] == "") {
+      while (historyArray[historyArray.length - 1] === "") {
         historyArray.pop();
       }
       let numPages = Math.ceil(historyArray.length / gamesPerPage);
@@ -754,8 +757,7 @@ module.exports = {
   },
 
   async setDeleteTimer(msg) {
-    const delay = DELETE_TIMER_MS;
-    const timestamp = Math.round((new Date().getTime() + delay) / 1e3);
+    const timestamp = Math.round((new Date().getTime() + DELETE_TIMER_MS) / 1e3);
     await msg.channel.send(
       `This channel will self-destruct <t:${timestamp}:R> unless a new game is started.`
     );
@@ -763,7 +765,7 @@ module.exports = {
       {
         type: "delete",
         timestamp,
-        playerId: msg.author ? msg.author.id : msg.member.id,
+        playerId: msg.author ? msg.author.id : msg.member.id
       },
       msg.channelId || msg.channel.id
     );
@@ -785,7 +787,7 @@ module.exports = {
         type: "inactive",
         timestamp,
         playerId: gameData[`player${canvas.player}Id`],
-        interval,
+        interval
       },
       msg.channelId || msg.channel.id
     );
@@ -805,7 +807,7 @@ module.exports = {
       {
         type: "reminder",
         timestamp,
-        playerId: msg.author ? msg.author.id : msg.member.id,
+        playerId: msg.author ? msg.author.id : msg.member.id
       },
       msg.channelId || msg.channel.id
     );
@@ -819,7 +821,7 @@ module.exports = {
       files.push(
         new Discord.AttachmentBuilder(canvas.toBuffer(), {
           name: canvas.filename,
-          description: `${canvas.id} ${canvas.komi}`,
+          description: `${canvas.id} ${canvas.komi}`
         })
       );
     }
@@ -827,7 +829,7 @@ module.exports = {
     try {
       const content = {
         content: message,
-        files,
+        files
       };
       if (!msg.type || !msg.reply) {
         // Normal message
@@ -861,5 +863,5 @@ module.exports = {
     let help = fs.readFileSync(path.join(__dirname, "USAGE.md"), "utf8");
     help = help.substring(help.indexOf("\n") + 1);
     return module.exports.sendMessage(msg, help, true);
-  },
+  }
 };

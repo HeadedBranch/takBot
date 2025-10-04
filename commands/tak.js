@@ -143,6 +143,9 @@ module.exports = {
     )
     .addBooleanOption((option) =>
       option.setName("blind").setDescription("Never show the board")
+    )
+    .addBooleanOption((option) =>
+      option.setName("bot-game").setDescription("Set this as a bot game (prints TPS after each turn)")
     ),
   async execute(interaction, client) {
     const options = interaction.options;
@@ -205,7 +208,7 @@ module.exports = {
 
     // Opening
     let opening = options.getString("opening") || config.defaults.opening;
-    if (opening != "swap" && opening != "no-swap") {
+    if (opening !== "swap" && opening !== "no-swap") {
       return sendMessage(interaction, "Invalid opening.", true);
     }
 
@@ -238,6 +241,7 @@ module.exports = {
     const showRoads = options.getBoolean("road-connections") || config.defaults.roadConnections;
     const allowLinks = options.getBoolean("allow-links") || config.defaults.allowLinks;
     const blind = options.getBoolean("blind") || config.defaults.blind;
+    const botGame = options.getBoolean("bot-game");
 
     // Create game data
     const gameData = {
@@ -267,6 +271,7 @@ module.exports = {
     if (showRoads === false) gameData.showRoads = false;
     if (allowLinks === false) gameData.allowLinks = false;
     if (blind) gameData.blind = true;
+    if (botGame) gameData.botGame = true;
 
     let destination = interaction;
     let channelName = `${gameData.player1}-🆚-${gameData.player2}`;

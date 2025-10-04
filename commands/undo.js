@@ -10,7 +10,7 @@ const {
   isPlayer,
   sendMessage,
   sendPngToDiscord,
-  setInactiveTimer,
+  setInactiveTimer
 } = require("../util");
 
 module.exports = {
@@ -41,9 +41,9 @@ module.exports = {
 
     if (
       (gameData.turnMarker === "1" &&
-        interaction.member.id != gameData.player2Id) ||
+        interaction.member.id !== gameData.player2Id) ||
       (gameData.turnMarker === "2" &&
-        interaction.member.id != gameData.player1Id)
+        interaction.member.id !== gameData.player1Id)
     ) {
       return sendMessage(
         interaction,
@@ -61,5 +61,5 @@ module.exports = {
     setInactiveTimer(interaction, gameData, canvas);
 
     return sendPngToDiscord(interaction, canvas, message);
-  },
+  }
 };

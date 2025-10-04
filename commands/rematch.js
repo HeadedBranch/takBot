@@ -10,7 +10,7 @@ const {
   saveGameData,
   sendMessage,
   sendPngToDiscord,
-  setInactiveTimer,
+  setInactiveTimer
 } = require("../util");
 
 module.exports = {
@@ -44,17 +44,16 @@ module.exports = {
       gameData.player1,
       gameData.player1Id,
       gameData.player2,
-      gameData.player2Id,
+      gameData.player2Id
     ] = [
       gameData.player2,
       gameData.player2Id,
       gameData.player1,
-      gameData.player1Id,
+      gameData.player1Id
     ];
 
     // Generate new game ID
-    const gameId = createPtnFile(gameData);
-    gameData.gameId = gameId;
+    gameData.gameId = createPtnFile(gameData);
 
     interaction.channel.setName(`${gameData.player1}-🆚-${gameData.player2}`);
     let canvas;
@@ -78,5 +77,5 @@ module.exports = {
 
     clearDeleteTimer(interaction);
     setInactiveTimer(interaction, gameData, canvas);
-  },
+  }
 };
